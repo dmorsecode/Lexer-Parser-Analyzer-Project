@@ -70,8 +70,13 @@ public final class Parser {
                 return parseReturnStatement();
             } else {
                 Ast.Expr expr = parseExpression();
-                // TODO: if next token is = then handle assignment
-                return new Ast.Stmt.Expression(expr);
+                if (!match("=")) {
+                    if (!match(";")) throw new ParseException("Missing semicolon.", tokens.get(-1).getIndex());
+                    return new Ast.Stmt.Expression(expr);
+                }
+                Ast.Expr rhs = parseExpression();
+                if (!match(";")) throw new ParseException("Missing semicolon.", tokens.get(-1).getIndex());
+                return new Ast.Stmt.Assignment(expr, rhs);
             }
         } catch (ParseException ex) {
             throw new ParseException("Error parsing statement.", tokens.get(-1).getIndex());
@@ -214,14 +219,14 @@ public final class Parser {
             Ast.Expr expr = parsePrimaryExpression();
             while (peek(".")) {
                 match(".");
-                if (!peek(Token.Type.IDENTIFIER))
+                if (!match(Token.Type.IDENTIFIER))
                     throw new ParseException("Invalid identifier following secondary expression.", tokens.get(0).getIndex());
-                String name = tokens.get(0).getLiteral();
-                if (!peek("(")) {
+                String name = tokens.get(-1).getLiteral();
+                if (!match("(")) {
                     expr = new Ast.Expr.Access(Optional.of(expr), name);
                 } else {
                     List<Ast.Expr> fncArgs = new ArrayList<>();
-                    if (!peek(")")) {
+                    if (!match(")")) {
                         fncArgs.add(parseExpression());
                         while (peek(",")) {
                             match(",");
@@ -260,15 +265,40 @@ public final class Parser {
                 return new Ast.Expr.Literal(new BigDecimal(tokens.get(-1).getLiteral()));
             } else if (match(Token.Type.CHARACTER)) {
                 String temp = tokens.get(-1).getLiteral();
+                temp = temp.replace("\\b", "\b")
+                        .replace("\\n", "\n")
+                        .replace("\\r", "\r")
+                        .replace("\\t", "\t")
+                        .replace("\\'", "\'")
+                        .replace("\\\"", "\"")
+                        .replace("\\\\", "\\");
                 return new Ast.Expr.Literal(temp.charAt(1));
             } else if (match(Token.Type.STRING)) {
                 String string = tokens.get(-1).getLiteral();
+                string = string.replace("\\b", "\b")
+                        .replace("\\n", "\n")
+                        .replace("\\r", "\r")
+                        .replace("\\t", "\t")
+                        .replace("\\'", "\'")
+                        .replace("\\\"", "\"")
+                        .replace("\\\\", "\\");
                 string = string.substring(1, string.length() - 1); // Remove quotes.
                 return new Ast.Expr.Literal(string);
             } else if (match(Token.Type.IDENTIFIER)) {
                 String name = tokens.get(-1).getLiteral();
-                // TODO: Handle function case if next token is (
-                return new Ast.Expr.Access(Optional.empty(), name);
+                if (!match("(")) {
+                    return new Ast.Expr.Access(Optional.empty(), name);
+                } else {
+                    List<Ast.Expr> fncArgs = new ArrayList<Ast.Expr>();
+                    while (!match(")")) {
+                        fncArgs.add(parseExpression());
+                        if (match(",")) {
+                            if (match(")"))
+                                throw new ParseException("Missing argument in function call.", tokens.get(-1).getIndex());
+                        }
+                    }
+                    return new Ast.Expr.Function(Optional.empty(), name, fncArgs);
+                }
             } else if (match("(")) {
                 Ast.Expr expr = parseExpression();
                 if (!match(")")) {
