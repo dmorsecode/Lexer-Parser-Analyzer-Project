@@ -232,7 +232,7 @@ public final class Parser {
                             match(",");
                             fncArgs.add(parseExpression());
                         }
-                        if (!peek(")")) {
+                        if (!match(")")) {
                             throw new ParseException("Invalid function call.", tokens.get(0).getIndex());
                         }
                     }
@@ -294,7 +294,7 @@ public final class Parser {
                         fncArgs.add(parseExpression());
                         if (match(",")) {
                             if (match(")"))
-                                throw new ParseException("Missing argument in function call.", tokens.get(-1).getIndex());
+                                throw new ParseException("Missing argument in function call.", tokens.get(0).getIndex());
                         }
                     }
                     return new Ast.Expr.Function(Optional.empty(), name, fncArgs);
@@ -302,7 +302,7 @@ public final class Parser {
             } else if (match("(")) {
                 Ast.Expr expr = parseExpression();
                 if (!match(")")) {
-                    throw new ParseException("Expected closing parenthesis.", tokens.get(-1).getIndex());
+                    throw new ParseException("Expected closing parenthesis.", tokens.get(0).getIndex());
                 }
                 return new Ast.Expr.Group(expr);
             } else {
