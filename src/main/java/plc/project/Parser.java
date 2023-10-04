@@ -175,7 +175,19 @@ public final class Parser {
      * {@code FOR}.
      */
     public Ast.Stmt.For parseForStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        try {
+            if (match(Token.Type.IDENTIFIER)) {
+                String name = tokens.get(-1).getLiteral();
+                if (!match("IN")) throw new ParseException("Expected IN.", tokens.get(0).getIndex());
+                Ast.Expr expr = parseExpression();
+                if (!match("DO")) throw new ParseException("Expected DO.", tokens.get(0).getIndex());
+                List<Ast.Stmt> statements = new ArrayList<>();
+                while (!match("END")) statements.add(parseStatement());
+                return new Ast.Stmt.For(name, expr, statements);
+            } else throw new ParseException("Expected identifier.", tokens.get(0).getIndex());
+        } catch (ParseException ex) {
+            throw new ParseException("Invalid FOR statement.", tokens.get(0).getIndex());
+        }
     }
 
     /**
@@ -184,7 +196,15 @@ public final class Parser {
      * {@code WHILE}.
      */
     public Ast.Stmt.While parseWhileStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        try {
+            Ast.Expr expr = parseExpression();
+            if (!match("DO")) throw new ParseException("Expected DO.", tokens.get(0).getIndex());
+            List<Ast.Stmt> statements = new ArrayList<>();
+            while (!match("END")) statements.add(parseStatement());
+            return new Ast.Stmt.While(expr, statements);
+        } catch (ParseException ex) {
+            throw new ParseException("Invalid WHILE statement.", tokens.get(0).getIndex());
+        }
     }
 
     /**
@@ -193,7 +213,14 @@ public final class Parser {
      * {@code RETURN}.
      */
     public Ast.Stmt.Return parseReturnStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        try {
+            Ast.Expr expr = parseExpression();
+            if (match(";")) {
+                return new Ast.Stmt.Return(expr);
+            } else throw new ParseException("Missing semicolon.", tokens.get(0).getIndex());
+        } catch (ParseException ex) {
+            throw new ParseException("Invalid RETURN statement.", tokens.get(0).getIndex());
+        }
     }
 
     /**
