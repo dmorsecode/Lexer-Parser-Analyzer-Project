@@ -34,18 +34,21 @@ public final class Parser {
     public Ast.Source parseSource() throws ParseException {
         List<Ast.Field> fields = new ArrayList<>();
         List<Ast.Method> methods = new ArrayList<>();
-        try {
-            while (tokens.has(0)) {
-                if (match("LET")) {
-                    fields.add(parseField());
-                } else if (match("DEF")) {
-                    methods.add(parseMethod());
-                }
+//        try {
+        while (tokens.has(0)) {
+            while (match("LET")) {
+                fields.add(parseField());
             }
-            return new Ast.Source(fields, methods);
-        } catch (ParseException ex) {
-            throw new ParseException("Invalid source code.", tokens.get(0).getIndex());
+            while (match("DEF")) {
+                methods.add(parseMethod());
+            }
+            if (tokens.has(0) && !match("DEF"))
+                throw new ParseException("Invalid field after method at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
         }
+        return new Ast.Source(fields, methods);
+//        } catch (ParseException ex) {
+//            throw new ParseException("Invalid source code at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+//        }
     }
 
     /**
@@ -57,7 +60,7 @@ public final class Parser {
             Ast.Stmt.Declaration dec = parseDeclarationStatement();
             return new Ast.Field(dec.getName(), dec.getValue());
         } catch (ParseException ex) {
-            throw new ParseException("Invalid declaration.", tokens.get(0).getIndex());
+            throw new ParseException("Invalid declaration at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
         }
     }
 
@@ -66,28 +69,32 @@ public final class Parser {
      * next tokens start a method, aka {@code DEF}.
      */
     public Ast.Method parseMethod() throws ParseException {
-        try {
-            if (match(Token.Type.IDENTIFIER)) {
-                String name = tokens.get(-1).getLiteral();
-                if (match("(")) {
-                    List<String> params = new ArrayList<>();
-                    while (match(Token.Type.IDENTIFIER)) {
-                        params.add(tokens.get(-1).getLiteral());
-                        if (!match(",") && !match(")"))
-                            throw new ParseException("Missing comma between parameters.", tokens.get(0).getIndex());
-                    }
-                    if (!match(")")) throw new ParseException("Missing closing parenthesis.", tokens.get(0).getIndex());
-                    if (!match("DO")) throw new ParseException("Expected DO statement.", tokens.get(0).getIndex());
-                    List<Ast.Stmt> statements = new ArrayList<>();
-                    while (!match("END")) {
-                        statements.add(parseStatement());
-                    }
-                    return new Ast.Method(name, params, statements);
-                } else throw new ParseException("Expected parenthesis.", tokens.get(0).getIndex());
-            } else throw new ParseException("Expected method identifier.", tokens.get(0).getIndex());
-        } catch (ParseException ex) {
-            throw new ParseException("Invalid method.", tokens.get(-1).getIndex());
-        }
+//        try {
+        if (match(Token.Type.IDENTIFIER)) {
+            String name = tokens.get(-1).getLiteral();
+            if (match("(")) {
+                List<String> params = new ArrayList<>();
+                while (match(Token.Type.IDENTIFIER)) {
+                    params.add(tokens.get(-1).getLiteral());
+                    if (!match(",") && !match(")"))
+                        throw new ParseException("Missing comma between parameters at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                }
+                if (!match(")"))
+                    throw new ParseException("Missing closing parenthesis at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                if (!match("DO"))
+                    throw new ParseException("Expected DO statement at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                List<Ast.Stmt> statements = new ArrayList<>();
+                while (!match("END")) {
+                    statements.add(parseStatement());
+                }
+                return new Ast.Method(name, params, statements);
+            } else
+                throw new ParseException("Expected parenthesis at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+        } else
+            throw new ParseException("Expected method identifier at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+//        } catch (ParseException ex) {
+//            throw new ParseException("Invalid method.", tokens.get(-1).getIndex());
+//        }
     }
 
     /**
@@ -96,30 +103,32 @@ public final class Parser {
      * statement, then it is an expression/assignment statement.
      */
     public Ast.Stmt parseStatement() throws ParseException {
-        try {
-            if (match("LET")) {
-                return parseDeclarationStatement();
-            } else if (match("IF")) {
-                return parseIfStatement();
-            } else if (match("FOR")) {
-                return parseForStatement();
-            } else if (match("WHILE")) {
-                return parseWhileStatement();
-            } else if (match("RETURN")) {
-                return parseReturnStatement();
-            } else {
-                Ast.Expr expr = parseExpression();
-                if (!match("=")) {
-                    if (!match(";")) throw new ParseException("Missing semicolon.", tokens.get(-1).getIndex());
-                    return new Ast.Stmt.Expression(expr);
-                }
-                Ast.Expr rhs = parseExpression();
-                if (!match(";")) throw new ParseException("Missing semicolon.", tokens.get(-1).getIndex());
-                return new Ast.Stmt.Assignment(expr, rhs);
+//        try {
+        if (match("LET")) {
+            return parseDeclarationStatement();
+        } else if (match("IF")) {
+            return parseIfStatement();
+        } else if (match("FOR")) {
+            return parseForStatement();
+        } else if (match("WHILE")) {
+            return parseWhileStatement();
+        } else if (match("RETURN")) {
+            return parseReturnStatement();
+        } else {
+            Ast.Expr expr = parseExpression();
+            if (!match("=")) {
+                if (!match(";"))
+                    throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                return new Ast.Stmt.Expression(expr);
             }
-        } catch (ParseException ex) {
-            throw new ParseException("Error parsing statement.", tokens.get(-1).getIndex());
+            Ast.Expr rhs = parseExpression();
+            if (!match(";"))
+                throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            return new Ast.Stmt.Assignment(expr, rhs);
         }
+//        } catch (ParseException ex) {
+//            throw new ParseException("Error parsing statement.", tokens.get(-1).getIndex());
+//        }
     }
 
     /**
@@ -135,13 +144,16 @@ public final class Parser {
                     Ast.Expr rhs = parseExpression();
                     if (match(";")) {
                         return new Ast.Stmt.Declaration(name, Optional.of(rhs));
-                    } else throw new ParseException("Missing semicolon.", tokens.get(0).getIndex());
+                    } else
+                        throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
                 } else if (match(";")) {
                     return new Ast.Stmt.Declaration(name, Optional.empty());
-                } else throw new ParseException("Missing semicolon.", tokens.get(0).getIndex());
-            } else throw new ParseException("Invalid identifier.", tokens.get(0).getIndex());
+                } else
+                    throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            } else
+                throw new ParseException("Invalid identifier at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
         } catch (ParseException ex) {
-            throw new ParseException("Invalid declaration statement.", tokens.get(0).getIndex());
+            throw new ParseException("Invalid declaration statement at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
         }
     }
 
@@ -151,22 +163,23 @@ public final class Parser {
      * {@code IF}.
      */
     public Ast.Stmt.If parseIfStatement() throws ParseException {
-        try {
-            Ast.Expr expr = parseExpression();
-            if (match("DO")) {
-                List<Ast.Stmt> dos = new ArrayList<>();
-                List<Ast.Stmt> elses = new ArrayList<>();
-                while (!match("ELSE") && !match("END")) {
-                    dos.add(parseStatement());
-                }
-                if (tokens.get(-1).getLiteral().equals("ELSE")) {
-                    while (!match("END")) elses.add(parseStatement());
-                }
-                return new Ast.Stmt.If(expr, dos, elses);
-            } else throw new ParseException("Missing DO.", tokens.get(0).getIndex());
-        } catch (ParseException ex) {
-            throw new ParseException("Invalid if statement.", tokens.get(0).getIndex());
-        }
+//        try {
+        Ast.Expr expr = parseExpression();
+        if (match("DO")) {
+            List<Ast.Stmt> dos = new ArrayList<>();
+            List<Ast.Stmt> elses = new ArrayList<>();
+            while (!match("ELSE") && !match("END")) {
+                dos.add(parseStatement());
+            }
+            if (tokens.get(-1).getLiteral().equals("ELSE")) {
+                while (!match("END")) elses.add(parseStatement());
+            }
+            return new Ast.Stmt.If(expr, dos, elses);
+        } else
+            throw new ParseException("Missing DO at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+//        } catch (ParseException ex) {
+//            throw new ParseException("Invalid if statement.", tokens.get(0).getIndex());
+//        }
     }
 
     /**
@@ -178,15 +191,18 @@ public final class Parser {
         try {
             if (match(Token.Type.IDENTIFIER)) {
                 String name = tokens.get(-1).getLiteral();
-                if (!match("IN")) throw new ParseException("Expected IN.", tokens.get(0).getIndex());
+                if (!match("IN"))
+                    throw new ParseException("Expected IN at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
                 Ast.Expr expr = parseExpression();
-                if (!match("DO")) throw new ParseException("Expected DO.", tokens.get(0).getIndex());
+                if (!match("DO"))
+                    throw new ParseException("Expected DO at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
                 List<Ast.Stmt> statements = new ArrayList<>();
                 while (!match("END")) statements.add(parseStatement());
                 return new Ast.Stmt.For(name, expr, statements);
-            } else throw new ParseException("Expected identifier.", tokens.get(0).getIndex());
+            } else
+                throw new ParseException("Expected identifier at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
         } catch (ParseException ex) {
-            throw new ParseException("Invalid FOR statement.", tokens.get(0).getIndex());
+            throw new ParseException("Invalid FOR statement at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
         }
     }
 
@@ -196,15 +212,22 @@ public final class Parser {
      * {@code WHILE}.
      */
     public Ast.Stmt.While parseWhileStatement() throws ParseException {
-        try {
-            Ast.Expr expr = parseExpression();
-            if (!match("DO")) throw new ParseException("Expected DO.", tokens.get(0).getIndex());
-            List<Ast.Stmt> statements = new ArrayList<>();
-            while (!match("END")) statements.add(parseStatement());
-            return new Ast.Stmt.While(expr, statements);
-        } catch (ParseException ex) {
-            throw new ParseException("Invalid WHILE statement.", tokens.get(0).getIndex());
+//        try {
+        Ast.Expr expr = parseExpression();
+        if (!match("DO"))
+            throw new ParseException("Expected DO at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+        List<Ast.Stmt> statements = new ArrayList<>();
+        while (!match("END") && tokens.has(0)) {
+            statements.add(parseStatement());
         }
+        if (!tokens.get(-1).getLiteral().equals("END")) {
+//            System.out.println("Error at index.");
+            throw new ParseException("Missing END at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+        }
+        return new Ast.Stmt.While(expr, statements);
+//        } catch (ParseException ex) {
+//            throw new ParseException("Invalid WHILE statement at index " + tokens.get(-1).getIndex(), tokens.get(-1).getIndex());
+//        }
     }
 
     /**
@@ -217,9 +240,10 @@ public final class Parser {
             Ast.Expr expr = parseExpression();
             if (match(";")) {
                 return new Ast.Stmt.Return(expr);
-            } else throw new ParseException("Missing semicolon.", tokens.get(0).getIndex());
+            } else
+                throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
         } catch (ParseException ex) {
-            throw new ParseException("Invalid RETURN statement.", tokens.get(0).getIndex());
+            throw new ParseException("Invalid RETURN statement at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
         }
     }
 
@@ -227,117 +251,117 @@ public final class Parser {
      * Parses the {@code expression} rule.
      */
     public Ast.Expr parseExpression() throws ParseException {
-        try {
-            return parseLogicalExpression();
-        } catch (ParseException ex) {
-            throw new ParseException("Error parsing expression.", tokens.get(-1).getIndex());
-        }
+//        try {
+        return parseLogicalExpression();
+//        } catch (ParseException ex) {
+//            throw new ParseException("Error parsing expression.", tokens.get(-1).getIndex());
+//        }
     }
 
     /**
      * Parses the {@code logical-expression} rule.
      */
     public Ast.Expr parseLogicalExpression() throws ParseException {
-        try {
-            Ast.Expr expr = parseEqualityExpression();
-            while (peek("AND") || peek("OR")) {
-                String op = tokens.get(0).getLiteral();
-                match(Token.Type.IDENTIFIER);
-                Ast.Expr rhs = parseEqualityExpression();
-                expr = new Ast.Expr.Binary(op, expr, rhs);
-            }
-            return expr;
-        } catch (ParseException ex) {
-            throw new ParseException("Error parsing logical expression.", tokens.get(-1).getIndex());
+//        try {
+        Ast.Expr expr = parseEqualityExpression();
+        while (peek("AND") || peek("OR")) {
+            String op = tokens.get(0).getLiteral();
+            match(Token.Type.IDENTIFIER);
+            Ast.Expr rhs = parseEqualityExpression();
+            expr = new Ast.Expr.Binary(op, expr, rhs);
         }
+        return expr;
+//        } catch (ParseException ex) {
+//            throw new ParseException("Error parsing logical expression.", tokens.get(-1).getIndex());
+//        }
     }
 
     /**
      * Parses the {@code equality-expression} rule.
      */
     public Ast.Expr parseEqualityExpression() throws ParseException {
-        try {
-            Ast.Expr expr = parseAdditiveExpression();
-            while (peek("<") || peek("<=") || peek(">") || peek(">=") || peek("==") || peek("!=")) {
-                String op = tokens.get(0).getLiteral();
-                match(Token.Type.OPERATOR);
-                Ast.Expr rhs = parseAdditiveExpression();
-                expr = new Ast.Expr.Binary(op, expr, rhs);
-            }
-            return expr;
-        } catch (ParseException ex) {
-            throw new ParseException("Error parsing equality expression.", tokens.get(-1).getIndex());
+//        try {
+        Ast.Expr expr = parseAdditiveExpression();
+        while (peek("<") || peek("<=") || peek(">") || peek(">=") || peek("==") || peek("!=")) {
+            String op = tokens.get(0).getLiteral();
+            match(Token.Type.OPERATOR);
+            Ast.Expr rhs = parseAdditiveExpression();
+            expr = new Ast.Expr.Binary(op, expr, rhs);
         }
+        return expr;
+//        } catch (ParseException ex) {
+//            throw new ParseException("Error parsing equality expression.", tokens.get(-1).getIndex());
+//        }
     }
 
     /**
      * Parses the {@code additive-expression} rule.
      */
     public Ast.Expr parseAdditiveExpression() throws ParseException {
-        try {
-            Ast.Expr expr = parseMultiplicativeExpression();
-            while (peek("+") || peek("-")) {
-                String op = tokens.get(0).getLiteral();
-                match(Token.Type.OPERATOR);
-                Ast.Expr rhs = parseMultiplicativeExpression();
-                expr = new Ast.Expr.Binary(op, expr, rhs);
-            }
-            return expr;
-        } catch (ParseException ex) {
-            throw new ParseException("Error parsing additive expression.", tokens.get(-1).getIndex());
+//        try {
+        Ast.Expr expr = parseMultiplicativeExpression();
+        while (peek("+") || peek("-")) {
+            String op = tokens.get(0).getLiteral();
+            match(Token.Type.OPERATOR);
+            Ast.Expr rhs = parseMultiplicativeExpression();
+            expr = new Ast.Expr.Binary(op, expr, rhs);
         }
+        return expr;
+//        } catch (ParseException ex) {
+//            throw new ParseException("Error parsing additive expression.", tokens.get(-1).getIndex());
+//        }
     }
 
     /**
      * Parses the {@code multiplicative-expression} rule.
      */
     public Ast.Expr parseMultiplicativeExpression() throws ParseException {
-        try {
-            Ast.Expr expr = parseSecondaryExpression();
-            while (peek("/") || peek("*")) {
-                String op = tokens.get(0).getLiteral();
-                match(Token.Type.OPERATOR);
-                Ast.Expr rhs = parseSecondaryExpression();
-                expr = new Ast.Expr.Binary(op, expr, rhs);
-            }
-            return expr;
-        } catch (ParseException ex) {
-            throw new ParseException("Error parsing multiplicative expression.", tokens.get(-1).getIndex());
+//        try {
+        Ast.Expr expr = parseSecondaryExpression();
+        while (peek("/") || peek("*")) {
+            String op = tokens.get(0).getLiteral();
+            match(Token.Type.OPERATOR);
+            Ast.Expr rhs = parseSecondaryExpression();
+            expr = new Ast.Expr.Binary(op, expr, rhs);
         }
+        return expr;
+//        } catch (ParseException ex) {
+//            throw new ParseException("Error parsing multiplicative expression.", tokens.get(-1).getIndex());
+//        }
     }
 
     /**
      * Parses the {@code secondary-expression} rule.
      */
     public Ast.Expr parseSecondaryExpression() throws ParseException {
-        try {
-            Ast.Expr expr = parsePrimaryExpression();
-            while (peek(".")) {
-                match(".");
-                if (!match(Token.Type.IDENTIFIER))
-                    throw new ParseException("Invalid identifier following secondary expression.", tokens.get(0).getIndex());
-                String name = tokens.get(-1).getLiteral();
-                if (!match("(")) {
-                    expr = new Ast.Expr.Access(Optional.of(expr), name);
-                } else {
-                    List<Ast.Expr> fncArgs = new ArrayList<>();
-                    if (!match(")")) {
+//        try {
+        Ast.Expr expr = parsePrimaryExpression();
+        while (peek(".")) {
+            match(".");
+            if (!match(Token.Type.IDENTIFIER))
+                throw new ParseException("Invalid identifier following secondary expression at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            String name = tokens.get(-1).getLiteral();
+            if (!match("(")) {
+                expr = new Ast.Expr.Access(Optional.of(expr), name);
+            } else {
+                List<Ast.Expr> fncArgs = new ArrayList<>();
+                if (!match(")")) {
+                    fncArgs.add(parseExpression());
+                    while (peek(",")) {
+                        match(",");
                         fncArgs.add(parseExpression());
-                        while (peek(",")) {
-                            match(",");
-                            fncArgs.add(parseExpression());
-                        }
-                        if (!match(")")) {
-                            throw new ParseException("Invalid function call.", tokens.get(0).getIndex());
-                        }
                     }
-                    expr = new Ast.Expr.Function(Optional.of(expr), name, fncArgs);
+                    if (!match(")")) {
+                        throw new ParseException("Invalid function call at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                    }
                 }
+                expr = new Ast.Expr.Function(Optional.of(expr), name, fncArgs);
             }
-            return expr;
-        } catch (ParseException ex) {
-            throw new ParseException("Error parsing secondary expression.", tokens.get(-1).getIndex());
         }
+        return expr;
+//        } catch (ParseException ex) {
+//            throw new ParseException("Error parsing secondary expression.", tokens.get(-1).getIndex());
+//        }
     }
 
     /**
@@ -347,65 +371,66 @@ public final class Parser {
      * not strictly necessary.
      */
     public Ast.Expr parsePrimaryExpression() throws ParseException {
-        try {
-            if (match("NIL")) {
-                return new Ast.Expr.Literal(null);
-            } else if (match("TRUE")) {
-                return new Ast.Expr.Literal(true);
-            } else if (match("FALSE")) {
-                return new Ast.Expr.Literal(false);
-            } else if (match(Token.Type.INTEGER)) {
-                return new Ast.Expr.Literal(new BigInteger(tokens.get(-1).getLiteral()));
-            } else if (match(Token.Type.DECIMAL)) {
-                return new Ast.Expr.Literal(new BigDecimal(tokens.get(-1).getLiteral()));
-            } else if (match(Token.Type.CHARACTER)) {
-                String temp = tokens.get(-1).getLiteral();
-                temp = temp.replace("\\b", "\b")
-                        .replace("\\n", "\n")
-                        .replace("\\r", "\r")
-                        .replace("\\t", "\t")
-                        .replace("\\'", "\'")
-                        .replace("\\\"", "\"")
-                        .replace("\\\\", "\\");
-                return new Ast.Expr.Literal(temp.charAt(1));
-            } else if (match(Token.Type.STRING)) {
-                String string = tokens.get(-1).getLiteral();
-                string = string.replace("\\b", "\b")
-                        .replace("\\n", "\n")
-                        .replace("\\r", "\r")
-                        .replace("\\t", "\t")
-                        .replace("\\'", "\'")
-                        .replace("\\\"", "\"")
-                        .replace("\\\\", "\\");
-                string = string.substring(1, string.length() - 1); // Remove quotes.
-                return new Ast.Expr.Literal(string);
-            } else if (match(Token.Type.IDENTIFIER)) {
-                String name = tokens.get(-1).getLiteral();
-                if (!match("(")) {
-                    return new Ast.Expr.Access(Optional.empty(), name);
-                } else {
-                    List<Ast.Expr> fncArgs = new ArrayList<Ast.Expr>();
-                    while (!match(")")) {
-                        fncArgs.add(parseExpression());
-                        if (match(",")) {
-                            if (match(")"))
-                                throw new ParseException("Missing argument in function call.", tokens.get(0).getIndex());
-                        }
-                    }
-                    return new Ast.Expr.Function(Optional.empty(), name, fncArgs);
-                }
-            } else if (match("(")) {
-                Ast.Expr expr = parseExpression();
-                if (!match(")")) {
-                    throw new ParseException("Expected closing parenthesis.", tokens.get(0).getIndex());
-                }
-                return new Ast.Expr.Group(expr);
+//        try {
+        if (match("NIL")) {
+            return new Ast.Expr.Literal(null);
+        } else if (match("TRUE")) {
+            return new Ast.Expr.Literal(true);
+        } else if (match("FALSE")) {
+            return new Ast.Expr.Literal(false);
+        } else if (match(Token.Type.INTEGER)) {
+            return new Ast.Expr.Literal(new BigInteger(tokens.get(-1).getLiteral()));
+        } else if (match(Token.Type.DECIMAL)) {
+            return new Ast.Expr.Literal(new BigDecimal(tokens.get(-1).getLiteral()));
+        } else if (match(Token.Type.CHARACTER)) {
+            String temp = tokens.get(-1).getLiteral();
+            temp = temp.replace("\\b", "\b")
+                    .replace("\\n", "\n")
+                    .replace("\\r", "\r")
+                    .replace("\\t", "\t")
+                    .replace("\\'", "\'")
+                    .replace("\\\"", "\"")
+                    .replace("\\\\", "\\");
+            return new Ast.Expr.Literal(temp.charAt(1));
+        } else if (match(Token.Type.STRING)) {
+            String string = tokens.get(-1).getLiteral();
+            string = string.replace("\\b", "\b")
+                    .replace("\\n", "\n")
+                    .replace("\\r", "\r")
+                    .replace("\\t", "\t")
+                    .replace("\\'", "\'")
+                    .replace("\\\"", "\"")
+                    .replace("\\\\", "\\");
+            string = string.substring(1, string.length() - 1); // Remove quotes.
+            return new Ast.Expr.Literal(string);
+        } else if (match(Token.Type.IDENTIFIER)) {
+            String name = tokens.get(-1).getLiteral();
+            if (!match("(")) {
+                return new Ast.Expr.Access(Optional.empty(), name);
             } else {
-                throw new ParseException("Invalid primary expression.", tokens.get(-1).getIndex());
+                List<Ast.Expr> fncArgs = new ArrayList<Ast.Expr>();
+                while (!match(")")) {
+                    fncArgs.add(parseExpression());
+                    if (match(",")) {
+                        if (peek(")"))
+                            throw new ParseException("Missing argument in function call at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                    }
+                }
+                return new Ast.Expr.Function(Optional.empty(), name, fncArgs);
             }
-        } catch (ParseException ex) {
-            throw new ParseException("Invalid primary expression.", tokens.get(-1).getIndex());
+        } else if (match("(")) {
+            Ast.Expr expr = parseExpression();
+            if (!match(")")) {
+                throw new ParseException("Expected closing parenthesis at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            }
+            return new Ast.Expr.Group(expr);
+        } else {
+            System.out.println(tokens.get(0).getLiteral());
+            throw new ParseException("Invalid primary expression at index " + tokens.get(0).getIndex(), tokens.get(0).getIndex());
         }
+//        } catch (ParseException ex) {
+//            throw new ParseException("Invalid primary expression.", tokens.get(-1).getIndex());
+//        }
     }
 
     /**
