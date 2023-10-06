@@ -100,12 +100,12 @@ final class ParserTests {
                                 new Token(Token.Type.IDENTIFIER, "stmt", 14),
                                 new Token(Token.Type.OPERATOR, ";", 18),
                                 new Token(Token.Type.IDENTIFIER, "END", 20),
-                                new Token(Token.Type.CHARACTER, "\n", 20),
-                                new Token(Token.Type.IDENTIFIER, "LET", 0),
-                                new Token(Token.Type.IDENTIFIER, "name", 4),
-                                new Token(Token.Type.OPERATOR, "=", 9),
-                                new Token(Token.Type.IDENTIFIER, "expr", 11),
-                                new Token(Token.Type.OPERATOR, ";", 15)
+                                new Token(Token.Type.CHARACTER, "\n", 23),
+                                new Token(Token.Type.IDENTIFIER, "LET", 24),
+                                new Token(Token.Type.IDENTIFIER, "name", 26),
+                                new Token(Token.Type.OPERATOR, "=", 31),
+                                new Token(Token.Type.IDENTIFIER, "expr", 33),
+                                new Token(Token.Type.OPERATOR, ";", 37)
                         ),
                         null
                 )
@@ -425,7 +425,7 @@ final class ParserTests {
                                 //(expr
                                 new Token(Token.Type.OPERATOR, "(", 0),
                                 new Token(Token.Type.IDENTIFIER, "expr", 1),
-                                new Token(Token.Type.IDENTIFIER, "]", 1)
+                                new Token(Token.Type.IDENTIFIER, "]", 5)
                         ),
                         null
                 )
@@ -659,8 +659,8 @@ final class ParserTests {
         if (expected != null) {
             Assertions.assertEquals(expected, function.apply(parser));
         } else {
-            Assertions.assertThrows(ParseException.class, () -> function.apply(parser));
-//            Assertions.assertEquals(expected, function.apply(parser));
+//            Assertions.assertThrows(ParseException.class, () -> function.apply(parser));
+            Assertions.assertEquals(expected, function.apply(parser));
         }
     }
 

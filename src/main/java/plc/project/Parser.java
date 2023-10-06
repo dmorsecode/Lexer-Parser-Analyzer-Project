@@ -27,6 +27,11 @@ public final class Parser {
         this.tokens = new TokenStream(tokens);
     }
 
+    public int findExceptionIndex() {
+        if (tokens.has(0)) return tokens.get(0).getIndex();
+        else return tokens.get(-1).getLiteral().length() + tokens.get(-1).getIndex();
+    }
+
     /**
      * Parses the {@code source} rule.
      */
@@ -42,12 +47,13 @@ public final class Parser {
             while (match("DEF")) {
                 methods.add(parseMethod());
             }
-            if (tokens.has(0) && !match("DEF"))
-                throw new ParseException("Invalid field after method at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            if (tokens.has(0) && !peek("DEF")) {
+                throw new ParseException("Invalid field after method at index " + findExceptionIndex(), findExceptionIndex());
+            }
         }
         return new Ast.Source(fields, methods);
 //        } catch (ParseException ex) {
-//            throw new ParseException("Invalid source code at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+//            throw new ParseException("Invalid source code at index " + findExceptionIndex(), findExceptionIndex());
 //        }
     }
 
@@ -60,7 +66,7 @@ public final class Parser {
             Ast.Stmt.Declaration dec = parseDeclarationStatement();
             return new Ast.Field(dec.getName(), dec.getValue());
         } catch (ParseException ex) {
-            throw new ParseException("Invalid declaration at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            throw new ParseException("Invalid declaration at index " + findExceptionIndex(), findExceptionIndex());
         }
     }
 
@@ -77,21 +83,21 @@ public final class Parser {
                 while (match(Token.Type.IDENTIFIER)) {
                     params.add(tokens.get(-1).getLiteral());
                     if (!match(",") && !match(")"))
-                        throw new ParseException("Missing comma between parameters at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                        throw new ParseException("Missing comma between parameters at index " + findExceptionIndex(), findExceptionIndex());
                 }
                 if (!match(")"))
-                    throw new ParseException("Missing closing parenthesis at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Missing closing parenthesis at index " + findExceptionIndex(), findExceptionIndex());
                 if (!match("DO"))
-                    throw new ParseException("Expected DO statement at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected DO statement at index " + findExceptionIndex(), findExceptionIndex());
                 List<Ast.Stmt> statements = new ArrayList<>();
                 while (!match("END")) {
                     statements.add(parseStatement());
                 }
                 return new Ast.Method(name, params, statements);
             } else
-                throw new ParseException("Expected parenthesis at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                throw new ParseException("Expected parenthesis at index " + findExceptionIndex(), findExceptionIndex());
         } else
-            throw new ParseException("Expected method identifier at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            throw new ParseException("Expected method identifier at index " + findExceptionIndex(), findExceptionIndex());
 //        } catch (ParseException ex) {
 //            throw new ParseException("Invalid method.", tokens.get(-1).getIndex());
 //        }
@@ -118,12 +124,12 @@ public final class Parser {
             Ast.Expr expr = parseExpression();
             if (!match("=")) {
                 if (!match(";"))
-                    throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Missing semicolon at index " + findExceptionIndex(), findExceptionIndex());
                 return new Ast.Stmt.Expression(expr);
             }
             Ast.Expr rhs = parseExpression();
             if (!match(";"))
-                throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                throw new ParseException("Missing semicolon at index " + findExceptionIndex(), findExceptionIndex());
             return new Ast.Stmt.Assignment(expr, rhs);
         }
 //        } catch (ParseException ex) {
@@ -145,15 +151,15 @@ public final class Parser {
                     if (match(";")) {
                         return new Ast.Stmt.Declaration(name, Optional.of(rhs));
                     } else
-                        throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                        throw new ParseException("Missing semicolon at index " + findExceptionIndex(), findExceptionIndex());
                 } else if (match(";")) {
                     return new Ast.Stmt.Declaration(name, Optional.empty());
                 } else
-                    throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Missing semicolon at index " + findExceptionIndex(), findExceptionIndex());
             } else
-                throw new ParseException("Invalid identifier at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                throw new ParseException("Invalid identifier at index " + findExceptionIndex(), findExceptionIndex());
         } catch (ParseException ex) {
-            throw new ParseException("Invalid declaration statement at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            throw new ParseException("Invalid declaration statement at index " + findExceptionIndex(), findExceptionIndex());
         }
     }
 
@@ -176,7 +182,7 @@ public final class Parser {
             }
             return new Ast.Stmt.If(expr, dos, elses);
         } else
-            throw new ParseException("Missing DO at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            throw new ParseException("Missing DO at index " + findExceptionIndex(), findExceptionIndex());
 //        } catch (ParseException ex) {
 //            throw new ParseException("Invalid if statement.", tokens.get(0).getIndex());
 //        }
@@ -192,17 +198,17 @@ public final class Parser {
             if (match(Token.Type.IDENTIFIER)) {
                 String name = tokens.get(-1).getLiteral();
                 if (!match("IN"))
-                    throw new ParseException("Expected IN at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected IN at index " + findExceptionIndex(), findExceptionIndex());
                 Ast.Expr expr = parseExpression();
                 if (!match("DO"))
-                    throw new ParseException("Expected DO at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected DO at index " + findExceptionIndex(), findExceptionIndex());
                 List<Ast.Stmt> statements = new ArrayList<>();
                 while (!match("END")) statements.add(parseStatement());
                 return new Ast.Stmt.For(name, expr, statements);
             } else
-                throw new ParseException("Expected identifier at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                throw new ParseException("Expected identifier at index " + findExceptionIndex(), findExceptionIndex());
         } catch (ParseException ex) {
-            throw new ParseException("Invalid FOR statement at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            throw new ParseException("Invalid FOR statement at index " + findExceptionIndex(), findExceptionIndex());
         }
     }
 
@@ -215,14 +221,14 @@ public final class Parser {
 //        try {
         Ast.Expr expr = parseExpression();
         if (!match("DO"))
-            throw new ParseException("Expected DO at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            throw new ParseException("Expected DO at index " + findExceptionIndex(), findExceptionIndex());
         List<Ast.Stmt> statements = new ArrayList<>();
         while (!match("END") && tokens.has(0)) {
             statements.add(parseStatement());
         }
         if (!tokens.get(-1).getLiteral().equals("END")) {
 //            System.out.println("Error at index.");
-            throw new ParseException("Missing END at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            throw new ParseException("Missing END at index " + findExceptionIndex(), findExceptionIndex());
         }
         return new Ast.Stmt.While(expr, statements);
 //        } catch (ParseException ex) {
@@ -241,9 +247,9 @@ public final class Parser {
             if (match(";")) {
                 return new Ast.Stmt.Return(expr);
             } else
-                throw new ParseException("Missing semicolon at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                throw new ParseException("Missing semicolon at index " + findExceptionIndex(), findExceptionIndex());
         } catch (ParseException ex) {
-            throw new ParseException("Invalid RETURN statement at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+            throw new ParseException("Invalid RETURN statement at index " + findExceptionIndex(), findExceptionIndex());
         }
     }
 
@@ -339,7 +345,7 @@ public final class Parser {
         while (peek(".")) {
             match(".");
             if (!match(Token.Type.IDENTIFIER))
-                throw new ParseException("Invalid identifier following secondary expression at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                throw new ParseException("Invalid identifier following secondary expression at index " + findExceptionIndex(), findExceptionIndex());
             String name = tokens.get(-1).getLiteral();
             if (!match("(")) {
                 expr = new Ast.Expr.Access(Optional.of(expr), name);
@@ -352,7 +358,7 @@ public final class Parser {
                         fncArgs.add(parseExpression());
                     }
                     if (!match(")")) {
-                        throw new ParseException("Invalid function call at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                        throw new ParseException("Invalid function call at index " + findExceptionIndex(), findExceptionIndex());
                     }
                 }
                 expr = new Ast.Expr.Function(Optional.of(expr), name, fncArgs);
@@ -413,7 +419,7 @@ public final class Parser {
                     fncArgs.add(parseExpression());
                     if (match(",")) {
                         if (peek(")"))
-                            throw new ParseException("Missing argument in function call at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                            throw new ParseException("Missing argument in function call at index " + findExceptionIndex(), findExceptionIndex());
                     }
                 }
                 return new Ast.Expr.Function(Optional.empty(), name, fncArgs);
@@ -421,7 +427,7 @@ public final class Parser {
         } else if (match("(")) {
             Ast.Expr expr = parseExpression();
             if (!match(")")) {
-                throw new ParseException("Expected closing parenthesis at index " + (tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length()), tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                throw new ParseException("Expected closing parenthesis at index " + findExceptionIndex(), findExceptionIndex());
             }
             return new Ast.Expr.Group(expr);
         } else {
