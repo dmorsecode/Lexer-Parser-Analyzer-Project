@@ -42,12 +42,31 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Method ast) {
-        throw new UnsupportedOperationException(); //TODO
+        scope.defineFunction(ast.getName(), ast.getParameters().size(), args -> {
+            try {
+                scope = new Scope(scope);
+                for (String param : ast.getParameters()) {
+                    for (Environment.PlcObject arg : args) {
+                        scope.defineVariable(param, arg);
+                    }
+                }
+                for (Ast.Stmt stmt : ast.getStatements()) {
+                    visit(stmt);
+                }
+            } catch (Return ret) {
+                return ret.value;
+            } finally {
+                scope = scope.getParent();
+            }
+            return Environment.NIL;
+        });
+        return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Stmt.Expression ast) {
-        throw new UnsupportedOperationException(); //TODO
+        visit(ast.getExpression());
+        return Environment.NIL;
     }
 
     @Override
@@ -63,7 +82,15 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Stmt.Assignment ast) {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expr receiver = ast.getReceiver();
+        if (receiver.getClass() == Ast.Expr.Access.class && ((Ast.Expr.Access) receiver).getReceiver().isPresent()) {
+            Environment.PlcObject r = visit(((Ast.Expr.Access) receiver).getReceiver().get());
+            r.setField(((Ast.Expr.Access) receiver).getName(), visit(ast.getValue()));
+        } else if (receiver.getClass() == Ast.Expr.Access.class && !((Ast.Expr.Access) receiver).getReceiver().isPresent()) {
+            Environment.Variable var = scope.lookupVariable(((Ast.Expr.Access) receiver).getName());
+            var.setValue(visit(ast.getValue()));
+        }
+        return Environment.NIL;
     }
 
     @Override
@@ -92,7 +119,19 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Stmt.For ast) {
-        throw new UnsupportedOperationException(); //TODO
+        Iterable<Environment.PlcObject> iterator = requireType(Iterable.class, visit(ast.getValue()));
+        for (Environment.PlcObject obj : iterator) {
+            try {
+                scope = new Scope(scope);
+                scope.defineVariable(ast.getName(), obj);
+                for (Ast.Stmt stmt : ast.getStatements()) {
+                    visit(stmt);
+                }
+            } finally {
+                scope = scope.getParent();
+            }
+        }
+        return Environment.NIL;
     }
 
     @Override
