@@ -41,7 +41,7 @@ final class InterpreterTests {
                         Arrays.asList(new Ast.Method("main", Arrays.asList(), Arrays.asList(
                                 new Ast.Stmt.Expression(new Ast.Expr.Binary("+",
                                         new Ast.Expr.Access(Optional.empty(), "x"),
-                                        new Ast.Expr.Access(Optional.empty(), "y")                                ))
+                                        new Ast.Expr.Access(Optional.empty(), "y")))
                         )))
                 ), Environment.NIL.getValue())
         );
@@ -130,7 +130,7 @@ final class InterpreterTests {
         Scope scope = new Scope(null);
         scope.defineVariable("variable", Environment.create("variable"));
         test(new Ast.Stmt.Assignment(
-                new Ast.Expr.Access(Optional.empty(),"variable"),
+                new Ast.Expr.Access(Optional.empty(), "variable"),
                 new Ast.Expr.Literal(BigInteger.ONE)
         ), Environment.NIL.getValue(), scope);
         Assertions.assertEquals(BigInteger.ONE, scope.lookupVariable("variable").getValue().getValue());
@@ -143,7 +143,7 @@ final class InterpreterTests {
         object.defineVariable("field", Environment.create("object.field"));
         scope.defineVariable("object", new Environment.PlcObject(object, "object"));
         test(new Ast.Stmt.Assignment(
-                new Ast.Expr.Access(Optional.of(new Ast.Expr.Access(Optional.empty(), "object")),"field"),
+                new Ast.Expr.Access(Optional.of(new Ast.Expr.Access(Optional.empty(), "object")), "field"),
                 new Ast.Expr.Literal(BigInteger.ONE)
         ), Environment.NIL.getValue(), scope);
         Assertions.assertEquals(BigInteger.ONE, object.lookupVariable("field").getValue().getValue());
@@ -163,7 +163,7 @@ final class InterpreterTests {
                 Arguments.of("True Condition",
                         new Ast.Stmt.If(
                                 new Ast.Expr.Literal(true),
-                                Arrays.asList(new Ast.Stmt.Assignment(new Ast.Expr.Access(Optional.empty(),"num"), new Ast.Expr.Literal(BigInteger.ONE))),
+                                Arrays.asList(new Ast.Stmt.Assignment(new Ast.Expr.Access(Optional.empty(), "num"), new Ast.Expr.Literal(BigInteger.ONE))),
                                 Arrays.asList()
                         ),
                         BigInteger.ONE
@@ -172,7 +172,7 @@ final class InterpreterTests {
                         new Ast.Stmt.If(
                                 new Ast.Expr.Literal(false),
                                 Arrays.asList(),
-                                Arrays.asList(new Ast.Stmt.Assignment(new Ast.Expr.Access(Optional.empty(),"num"), new Ast.Expr.Literal(BigInteger.TEN)))
+                                Arrays.asList(new Ast.Stmt.Assignment(new Ast.Expr.Access(Optional.empty(), "num"), new Ast.Expr.Literal(BigInteger.TEN)))
                         ),
                         BigInteger.TEN
                 )
@@ -189,10 +189,10 @@ final class InterpreterTests {
         test(new Ast.Stmt.For("num",
                 new Ast.Expr.Access(Optional.empty(), "list"),
                 Arrays.asList(new Ast.Stmt.Assignment(
-                        new Ast.Expr.Access(Optional.empty(),"sum"),
+                        new Ast.Expr.Access(Optional.empty(), "sum"),
                         new Ast.Expr.Binary("+",
-                                new Ast.Expr.Access(Optional.empty(),"sum"),
-                                new Ast.Expr.Access(Optional.empty(),"num")
+                                new Ast.Expr.Access(Optional.empty(), "sum"),
+                                new Ast.Expr.Access(Optional.empty(), "num")
                         )
                 ))
         ), Environment.NIL.getValue(), scope);
@@ -205,17 +205,17 @@ final class InterpreterTests {
         scope.defineVariable("num", Environment.create(BigInteger.ZERO));
         test(new Ast.Stmt.While(
                 new Ast.Expr.Binary("<",
-                        new Ast.Expr.Access(Optional.empty(),"num"),
+                        new Ast.Expr.Access(Optional.empty(), "num"),
                         new Ast.Expr.Literal(BigInteger.TEN)
                 ),
                 Arrays.asList(new Ast.Stmt.Assignment(
-                        new Ast.Expr.Access(Optional.empty(),"num"),
+                        new Ast.Expr.Access(Optional.empty(), "num"),
                         new Ast.Expr.Binary("+",
-                                new Ast.Expr.Access(Optional.empty(),"num"),
+                                new Ast.Expr.Access(Optional.empty(), "num"),
                                 new Ast.Expr.Literal(BigInteger.ONE)
                         )
                 ))
-        ),Environment.NIL.getValue(), scope);
+        ), Environment.NIL.getValue(), scope);
         Assertions.assertEquals(BigInteger.TEN, scope.lookupVariable("num").getValue().getValue());
     }
 
@@ -263,12 +263,19 @@ final class InterpreterTests {
 
     private static Stream<Arguments> testBinaryExpression() {
         return Stream.of(
-                Arguments.of("And",
+                Arguments.of("And (False)",
                         new Ast.Expr.Binary("AND",
                                 new Ast.Expr.Literal(true),
                                 new Ast.Expr.Literal(false)
                         ),
                         false
+                ),
+                Arguments.of("And (True)",
+                        new Ast.Expr.Binary("AND",
+                                new Ast.Expr.Literal(true),
+                                new Ast.Expr.Literal(true)
+                        ),
+                        true
                 ),
                 Arguments.of("Or (Short Circuit)",
                         new Ast.Expr.Binary("OR",
@@ -279,6 +286,13 @@ final class InterpreterTests {
                 ),
                 Arguments.of("Less Than",
                         new Ast.Expr.Binary("<",
+                                new Ast.Expr.Literal(BigInteger.ONE),
+                                new Ast.Expr.Literal(BigInteger.TEN)
+                        ),
+                        true
+                ),
+                Arguments.of("Less Than or Equal",
+                        new Ast.Expr.Binary("<=",
                                 new Ast.Expr.Literal(BigInteger.ONE),
                                 new Ast.Expr.Literal(BigInteger.TEN)
                         ),
@@ -297,6 +311,13 @@ final class InterpreterTests {
                                 new Ast.Expr.Literal(BigInteger.TEN)
                         ),
                         false
+                ),
+                Arguments.of("Not Equal",
+                        new Ast.Expr.Binary("!=",
+                                new Ast.Expr.Literal(BigInteger.ONE),
+                                new Ast.Expr.Literal(BigInteger.TEN)
+                        ),
+                        true
                 ),
                 Arguments.of("Concatenation",
                         new Ast.Expr.Binary("+",
