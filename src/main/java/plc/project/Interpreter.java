@@ -34,8 +34,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Field ast) {
-        Environment.PlcObject value;
-        value = ast.getValue().isPresent() ? visit(ast.getValue().get()) : Environment.NIL;
+        Environment.PlcObject value = Environment.NIL;
+        if (ast.getValue().isPresent()) value = visit(ast.getValue().get());
         scope.defineVariable(ast.getName(), value);
         return Environment.NIL;
     }
@@ -170,7 +170,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     @Override
     public Environment.PlcObject visit(Ast.Expr.Binary ast) {
         Environment.PlcObject lhs = visit(ast.getLeft());
-        //Environment.PlcObject rhs = visit(ast.getRight());
+        //Environment.PlcObject rhs =
         String op = ast.getOperator();
         if (op == "AND") {
             if (requireType(Boolean.class, lhs) == requireType(Boolean.class, visit(ast.getRight())))
@@ -205,6 +205,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         } else if (op == "+") {
             Environment.PlcObject rhs = visit(ast.getRight());
             if (lhs.getValue().getClass() == BigInteger.class && rhs.getValue().getClass() == BigInteger.class) {
+                System.out.println(Environment.create(requireType(BigInteger.class, lhs).add(requireType(BigInteger.class, rhs))));
                 return Environment.create(requireType(BigInteger.class, lhs).add(requireType(BigInteger.class, rhs)));
             }
             if (lhs.getValue().getClass() == BigDecimal.class && rhs.getValue().getClass() == BigDecimal.class) {
