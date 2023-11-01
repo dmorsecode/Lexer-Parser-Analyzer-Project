@@ -2,6 +2,7 @@ package plc.project;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -26,17 +27,44 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Source ast) {
-        throw new UnsupportedOperationException();  // TODO
+        if (scope.lookupFunction("main", 0) == null || scope.lookupFunction("main", 0).getReturnType() != Environment.Type.INTEGER) {
+            throw new RuntimeException("Invalid main function.");
+        }
+        for (Ast.Field field : ast.getFields()) visit(field);
+        for (Ast.Method method : ast.getMethods()) visit(method);
+        return null;
     }
 
     @Override
     public Void visit(Ast.Field ast) {
-        throw new UnsupportedOperationException();  // TODO
+        if (ast.getValue().isPresent()) {
+            visit(ast.getValue().get());
+            requireAssignable(Environment.getType(ast.getTypeName()), ast.getValue().get().getType());
+            scope.defineVariable(ast.getName(), ast.getName(), ast.getValue().get().getType(), Environment.NIL);
+        } else {
+            scope.defineVariable(ast.getName(), ast.getName(), Environment.getType(ast.getTypeName()), Environment.NIL);
+        }
+        ast.setVariable(scope.lookupVariable(ast.getName()));
+        return null;
     }
 
     @Override
     public Void visit(Ast.Method ast) {
-        throw new UnsupportedOperationException();  // TODO
+        List<Environment.Type> types = new ArrayList<Environment.Type>();
+        for (String type : ast.getParameterTypeNames()) types.add(Environment.getType(type));
+        Environment.Type returnType = Environment.Type.NIL;
+        if (ast.getReturnTypeName().isPresent()) returnType = Environment.getType(ast.getReturnTypeName().get());
+        ast.setFunction(scope.defineFunction(ast.getName(), ast.getName(), types, returnType, args -> Environment.NIL));
+        try {
+            scope = new Scope(scope);
+            for (int i = 0; i < ast.getParameters().size(); i++) {
+                scope.defineVariable(ast.getParameters().get(i), ast.getParameters().get(i), types.get(i), Environment.NIL);
+            }
+            for (Ast.Stmt stmt : ast.getStatements()) visit(stmt);
+        } finally {
+            scope = scope.getParent();
+        }
+        return null;
     }
 
     @Override
@@ -76,7 +104,11 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Stmt.Assignment ast) {
-        throw new UnsupportedOperationException();  // TODO
+        if (!(ast.getReceiver() instanceof Ast.Expr.Access)) throw new RuntimeException("Expected Access expression.");
+        visit(ast.getReceiver());
+        visit(ast.getValue());
+        requireAssignable(ast.getReceiver().getType(), ast.getValue().getType());
+        return null;
     }
 
     @Override
@@ -161,17 +193,59 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Expr.Group ast) {
-        throw new UnsupportedOperationException();  // TODO
+        if (!(ast.getExpression() instanceof Ast.Expr.Binary))
+            throw new RuntimeException("Expected binary expression.");
+        visit(ast.getExpression());
+        ast.setType(ast.getExpression().getType());
+        return null;
     }
 
     @Override
     public Void visit(Ast.Expr.Binary ast) {
-        throw new UnsupportedOperationException();  // TODO
+        Ast.Expr lhs = ast.getLeft();
+        Ast.Expr rhs = ast.getRight();
+        String op = ast.getOperator();
+        visit(lhs);
+        visit(rhs);
+        if (op.equals("AND") || op.equals("OR")) {
+            requireAssignable(Environment.Type.BOOLEAN, lhs.getType());
+            requireAssignable(Environment.Type.BOOLEAN, rhs.getType());
+            ast.setType(Environment.Type.BOOLEAN);
+        } else if (op.equals("<") || op.equals("<=") || op.equals(">") || op.equals(">=") || op.equals("==") || op.equals("!=")) {
+            requireAssignable(Environment.Type.COMPARABLE, lhs.getType());
+            requireAssignable(Environment.Type.COMPARABLE, rhs.getType());
+            ast.setType(Environment.Type.BOOLEAN);
+        } else if (op.equals("+")) {
+            if (lhs.getType() == Environment.Type.STRING || rhs.getType() == Environment.Type.STRING)
+                ast.setType(Environment.Type.STRING);
+            else if (lhs.getType() == Environment.Type.INTEGER || lhs.getType() == Environment.Type.DECIMAL) {
+                if (lhs.getType() != rhs.getType()) throw new RuntimeException("Non-matching binary expressions.");
+                ast.setType(lhs.getType());
+            } else throw new RuntimeException("Left-side binary expression must be string, integer, or decimal.");
+        } else if (op.equals("-") || op.equals("*") || op.equals("/")) {
+            if (lhs.getType() == Environment.Type.INTEGER || lhs.getType() == Environment.Type.DECIMAL) {
+                if (lhs.getType() != rhs.getType()) throw new RuntimeException("Non-matching binary expressions.");
+                ast.setType(lhs.getType());
+            } else throw new RuntimeException("Left-side binary expression must be  an integer or decimal.");
+        } else throw new RuntimeException("Invalid binary expression operator.");
+        return null;
     }
 
     @Override
     public Void visit(Ast.Expr.Access ast) {
-        throw new UnsupportedOperationException();  // TODO
+        if (ast.getReceiver().isPresent()) {
+            Ast.Expr.Access expr = (Ast.Expr.Access) ast.getReceiver().get();
+            expr.setVariable(scope.lookupVariable(expr.getName()));
+            try {
+                scope = scope.lookupVariable(expr.getName()).getType().getScope();
+                ast.setVariable(scope.lookupVariable(ast.getName()));
+            } finally {
+                scope = scope.getParent();
+            }
+        } else {
+            ast.setVariable(scope.lookupVariable(ast.getName()));
+        }
+        return null;
     }
 
     @Override
