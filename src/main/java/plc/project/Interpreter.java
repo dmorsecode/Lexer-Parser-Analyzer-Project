@@ -259,15 +259,20 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Expr.Function ast) {
-        List<Environment.PlcObject> args = new ArrayList<>();
-        for (Ast.Expr arg : ast.getArguments()) {
-            args.add(visit(arg));
-        }
-        if (ast.getReceiver().isPresent()) {
-            Environment.PlcObject receiver = visit(ast.getReceiver().get());
-            return receiver.callMethod(ast.getName(), args);
-        } else {
-            return scope.lookupFunction(ast.getName(), args.size()).invoke(args);
+        try {
+            scope = new Scope(scope);
+            List<Environment.PlcObject> args = new ArrayList<>();
+            for (Ast.Expr arg : ast.getArguments()) {
+                args.add(visit(arg));
+            }
+            if (ast.getReceiver().isPresent()) {
+                Environment.PlcObject receiver = visit(ast.getReceiver().get());
+                return receiver.callMethod(ast.getName(), args);
+            } else {
+                return scope.lookupFunction(ast.getName(), args.size()).invoke(args);
+            }
+        } finally {
+            scope = scope.getParent();
         }
     }
 
