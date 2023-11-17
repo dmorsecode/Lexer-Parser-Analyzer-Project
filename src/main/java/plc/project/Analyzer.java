@@ -255,9 +255,9 @@ public final class Analyzer implements Ast.Visitor<Void> {
             Ast.Expr expr = ast.getReceiver().get();
             visit(expr);
             List<Environment.Type> types = expr.getType().getMethod(ast.getName(), ast.getArguments().size()).getParameterTypes();
-            for (int i = 1; i < args.size(); i++) {
+            for (int i = 0; i < args.size(); i++) {
                 visit(args.get(i));
-                requireAssignable(types.get(i), args.get(i).getType());
+                requireAssignable(types.get(i + 1), args.get(i).getType());
             }
             ast.setFunction(expr.getType().getMethod(ast.getName(), ast.getArguments().size()));
         } else {
