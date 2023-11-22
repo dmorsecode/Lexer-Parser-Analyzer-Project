@@ -66,22 +66,22 @@ public final class Generator implements Ast.Visitor<Void> {
     public Void visit(Ast.Field ast) {
         switch (ast.getTypeName()) {
             case "Integer":
-                print("int");
+                print("int ");
                 break;
             case "Decimal":
-                print("double");
+                print("double ");
                 break;
             case "String":
-                print("String");
+                print("String ");
                 break;
             case "Boolean":
-                print("boolean");
+                print("boolean ");
                 break;
             case "Character":
-                print("char");
+                print("char ");
                 break;
         }
-        print(" ", ast.getName());
+        print(ast.getName());
         if (ast.getValue().isPresent()) {
             print(" = ", ast.getValue().get());
         }
