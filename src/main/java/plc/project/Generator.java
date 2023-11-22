@@ -124,26 +124,39 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Expr.Group ast) {
-        throw new UnsupportedOperationException(); //TODO
-        //return null;
+        print("(", ast.getExpression(), ")");
+        return null;
     }
 
     @Override
     public Void visit(Ast.Expr.Binary ast) {
-        throw new UnsupportedOperationException(); //TODO
-        //return null;
+        print(ast.getLeft(), " ");
+        if (ast.getOperator().equals("AND")) print("&&");
+        else if (ast.getOperator().equals("OR")) print("||");
+        else print(ast.getOperator());
+        print(" ", ast.getRight());
+        return null;
     }
 
     @Override
     public Void visit(Ast.Expr.Access ast) {
-        throw new UnsupportedOperationException(); //TODO
-        //return null;
+        if (ast.getReceiver().isPresent()) print(ast.getReceiver().get(), ".");
+        print(ast.getVariable().getJvmName());
+        return null;
     }
 
     @Override
     public Void visit(Ast.Expr.Function ast) {
-        throw new UnsupportedOperationException(); //TODO
-        //return null;
+        if (ast.getReceiver().isPresent()) print(ast.getReceiver().get(), ".");
+        print(ast.getFunction().getJvmName(), "(");
+        if (!ast.getArguments().isEmpty()) {
+            for (int i = 0; i < ast.getArguments().size(); i++) {
+                print(ast.getArguments().get(i));
+                if (i != ast.getArguments().size() - 1) print(", ");
+            }
+        }
+        print(")");
+        return null;
     }
 
 }
