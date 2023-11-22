@@ -32,20 +32,83 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Source ast) {
-        throw new UnsupportedOperationException(); //TODO
-        //return null;
+        print("public class Main {");
+        newline(0);
+        ++indent;
+        if (!ast.getFields().isEmpty()) {
+            newline(++indent);
+            for (int i = 0; i < ast.getFields().size(); i++) {
+                if (i != 0) {
+                    newline(indent);
+                }
+                print(ast.getFields().get(i));
+            }
+            newline(0);
+        }
+        newline(indent);
+        print("public static void main(String[] args) {");
+        newline(++indent);
+        print("System.exit(new Main().main());");
+        newline(--indent);
+        print("}");
+        newline(0);
+        for (int i = 0; i < ast.getMethods().size(); i++) {
+            newline(indent);
+            print(ast.getMethods().get(i));
+        }
+        newline(0);
+        newline(--indent);
+        print("}");
+        return null;
     }
 
     @Override
     public Void visit(Ast.Field ast) {
-        throw new UnsupportedOperationException(); //TODO
-        //return null;
+        switch (ast.getTypeName()) {
+            case "Integer":
+                print("int");
+                break;
+            case "Decimal":
+                print("double");
+                break;
+            case "String":
+                print("String");
+                break;
+            case "Boolean":
+                print("boolean");
+                break;
+            case "Character":
+                print("char");
+                break;
+        }
+        print(" ", ast.getName());
+        if (ast.getValue().isPresent()) {
+            print(" = ", ast.getValue().get());
+        }
+        print(";");
+        return null;
     }
 
     @Override
     public Void visit(Ast.Method ast) {
-        throw new UnsupportedOperationException(); //TODO
-        //return null;
+        print(ast.getFunction().getReturnType().getJvmName(), " ", ast.getName(), "(");
+        for (int i = 0; i < ast.getParameters().size(); i++) {
+            print(ast.getParameterTypeNames().get(i), " ", ast.getParameters().get(i));
+            if (i != ast.getParameters().size() - 1) print(", ");
+        }
+        print(") {");
+        if (!ast.getStatements().isEmpty()) {
+            newline(++indent);
+            for (int i = 0; i < ast.getStatements().size(); i++) {
+                if (i != 0) {
+                    newline(indent);
+                }
+                print(ast.getStatements().get(i));
+            }
+            newline(--indent);
+        }
+        print("}");
+        return null;
     }
 
     @Override
@@ -75,14 +138,45 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Stmt.If ast) {
-        throw new UnsupportedOperationException(); //TODO
-        //return null;
+        print("if (", ast.getCondition(), ") {");
+        newline(++indent);
+        for (int i = 0; i < ast.getThenStatements().size(); i++) {
+            if (i != 0) {
+                newline(indent);
+            }
+            print(ast.getThenStatements().get(i));
+        }
+        newline(--indent);
+        print("}");
+
+        if (!ast.getElseStatements().isEmpty()) {
+            print(" else {");
+            newline(++indent);
+            for (int i = 0; i < ast.getElseStatements().size(); i++) {
+                if (i != 0) {
+                    newline(indent);
+                }
+                print(ast.getElseStatements().get(i));
+            }
+            newline(--indent);
+            print("}");
+        }
+        return null;
     }
 
     @Override
     public Void visit(Ast.Stmt.For ast) {
-        throw new UnsupportedOperationException(); //TODO
-        //return null;
+        print("for (int ", ast.getName(), " : ", ast.getValue(), ") {");
+        newline(++indent);
+        for (int i = 0; i < ast.getStatements().size(); i++) {
+            if (i != 0) {
+                newline(indent);
+            }
+            print(ast.getStatements().get(i));
+        }
+        newline(--indent);
+        print("}");
+        return null;
     }
 
     @Override
