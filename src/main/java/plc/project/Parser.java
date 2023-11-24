@@ -64,6 +64,8 @@ public final class Parser {
     public Ast.Field parseField() throws ParseException {
         try {
             Ast.Stmt.Declaration dec = parseDeclarationStatement();
+            if (dec.getTypeName().isPresent())
+                return new Ast.Field(dec.getName(), dec.getTypeName().get(), dec.getValue());
             return new Ast.Field(dec.getName(), dec.getValue());
         } catch (ParseException ex) {
             throw new ParseException("Invalid declaration at index " + findExceptionIndex(), findExceptionIndex());
@@ -80,20 +82,26 @@ public final class Parser {
             String name = tokens.get(-1).getLiteral();
             if (match("(")) {
                 List<String> params = new ArrayList<>();
+                List<String> types = new ArrayList<>();
                 while (match(Token.Type.IDENTIFIER)) {
                     params.add(tokens.get(-1).getLiteral());
+                    if (match(":", Token.Type.IDENTIFIER)) types.add(tokens.get(-1).getLiteral());
+                    else
+                        throw new ParseException("Missing type at index " + findExceptionIndex(), findExceptionIndex());
                     if (!match(",") && !match(")"))
                         throw new ParseException("Missing comma between parameters at index " + findExceptionIndex(), findExceptionIndex());
                 }
                 if (!match(")"))
                     throw new ParseException("Missing closing parenthesis at index " + findExceptionIndex(), findExceptionIndex());
+                Optional<String> returnType = Optional.empty();
+                if (match(":", Token.Type.IDENTIFIER)) returnType = Optional.of(tokens.get(-1).getLiteral());
                 if (!match("DO"))
                     throw new ParseException("Expected DO statement at index " + findExceptionIndex(), findExceptionIndex());
                 List<Ast.Stmt> statements = new ArrayList<>();
                 while (!match("END")) {
                     statements.add(parseStatement());
                 }
-                return new Ast.Method(name, params, statements);
+                return new Ast.Method(name, params, types, returnType, statements);
             } else
                 throw new ParseException("Expected parenthesis at index " + findExceptionIndex(), findExceptionIndex());
         } else
@@ -146,14 +154,16 @@ public final class Parser {
         try {
             if (match(Token.Type.IDENTIFIER)) {
                 String name = tokens.get(-1).getLiteral();
+                Optional<String> type = Optional.empty();
+                if (match(":", Token.Type.IDENTIFIER)) type = Optional.of(tokens.get(-1).getLiteral());
                 if (match("=")) {
                     Ast.Expr rhs = parseExpression();
                     if (match(";")) {
-                        return new Ast.Stmt.Declaration(name, Optional.of(rhs));
+                        return new Ast.Stmt.Declaration(name, type, Optional.of(rhs));
                     } else
                         throw new ParseException("Missing semicolon at index " + findExceptionIndex(), findExceptionIndex());
                 } else if (match(";")) {
-                    return new Ast.Stmt.Declaration(name, Optional.empty());
+                    return new Ast.Stmt.Declaration(name, type, Optional.empty());
                 } else
                     throw new ParseException("Missing semicolon at index " + findExceptionIndex(), findExceptionIndex());
             } else
