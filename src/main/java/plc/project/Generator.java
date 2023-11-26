@@ -9,6 +9,10 @@ public final class Generator implements Ast.Visitor<Void> {
     private final PrintWriter writer;
     private int indent = 0;
 
+    public static String getJvmType(String type) {
+        return Environment.getType(type).getJvmName();
+    }
+
     public Generator(PrintWriter writer) {
         this.writer = writer;
     }
@@ -33,8 +37,8 @@ public final class Generator implements Ast.Visitor<Void> {
     @Override
     public Void visit(Ast.Source ast) {
         print("public class Main {");
+        indent++;
         newline(0);
-        ++indent;
         if (!ast.getFields().isEmpty()) {
             newline(++indent);
             for (int i = 0; i < ast.getFields().size(); i++) {
@@ -64,23 +68,7 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Field ast) {
-        switch (ast.getTypeName()) {
-            case "Integer":
-                print("int ");
-                break;
-            case "Decimal":
-                print("double ");
-                break;
-            case "String":
-                print("String ");
-                break;
-            case "Boolean":
-                print("boolean ");
-                break;
-            case "Character":
-                print("char ");
-                break;
-        }
+        print(getJvmType(ast.getTypeName()), " ");
         print(ast.getName());
         if (ast.getValue().isPresent()) {
             print(" = ", ast.getValue().get());
@@ -93,7 +81,7 @@ public final class Generator implements Ast.Visitor<Void> {
     public Void visit(Ast.Method ast) {
         print(ast.getFunction().getReturnType().getJvmName(), " ", ast.getName(), "(");
         for (int i = 0; i < ast.getParameters().size(); i++) {
-            print(ast.getParameterTypeNames().get(i), " ", ast.getParameters().get(i));
+            print(getJvmType(ast.getParameterTypeNames().get(i)), " ", ast.getParameters().get(i));
             if (i != ast.getParameters().size() - 1) print(", ");
         }
         print(") {");
