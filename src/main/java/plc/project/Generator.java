@@ -59,8 +59,8 @@ public final class Generator implements Ast.Visitor<Void> {
         for (int i = 0; i < ast.getMethods().size(); i++) {
             newline(indent);
             print(ast.getMethods().get(i));
+            newline(0);
         }
-        newline(0);
         newline(--indent);
         print("}");
         return null;
